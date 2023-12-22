@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 const UserSchema = mongoose.Schema({
   name: {
     type: String,
@@ -29,6 +30,26 @@ const UserSchema = mongoose.Schema({
   tokenExp: {
     type: Number,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// mongo 기능 pre 가 save 하기 전에 뭔가를 한다
+UserSchema.pre("save", function (next) {
+  let user = this;
+  if (user.isModified("password")) {
+    bcrypt.genSalt(saltRounds, function (err, salt) {
+      if (err) return next(err);
+      bcrypt.hash(user.password, salt, function (err, hash) {
+        // Store hash in your password DB.
+        if (err) return next(err);
+        user.password = hash;
+        next();
+      });
+    });
+  }
 });
 
 const User = mongoose.model("User", UserSchema);
