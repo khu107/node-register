@@ -6,6 +6,7 @@ const { User } = require("./models/User");
 const bodyParser = require("body-parser");
 const config = require("./config/key");
 const cookieParser = require("cookie-parser");
+const { auth } = require("./middleware/auth");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -22,7 +23,7 @@ app.get("/", (req, res) => {
   res.send("register");
 });
 
-app.post("/register", (req, res) => {
+app.post("api/user/register", (req, res) => {
   const user = new User(req.body);
   user
     .save()
@@ -36,7 +37,7 @@ app.post("/register", (req, res) => {
     });
 });
 
-app.post("/login", (req, res) => {
+app.post("api/user/login", (req, res) => {
   // 요청된 이메일 데이터 베이스에서 있는지 찾는다.
   User.findOne({ email: req.body.emal }, (err, user) => {
     if (!user) {
@@ -66,6 +67,19 @@ app.post("/login", (req, res) => {
     .cookie("x_auth", user.token)
     .status(200)
     .json({ loginSuccess: false, userId: user._id });
+});
+
+app.get("api/user/auth", auth, (req, res) => {
+  res.status(200).json({
+    _id: req.user._id,
+    isAdmin: req.user.role === 0 ? false : true,
+    isAuth: true,
+    email: req.user.email,
+    name: req.user.name,
+    lastname: req.user.lastname,
+    role: req.user.role,
+    image: req.user.image,
+  });
 });
 
 app.listen(port, () => {
